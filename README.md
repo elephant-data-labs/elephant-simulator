@@ -1,6 +1,6 @@
-# Laboratorio de incertidumbre
+# Elephant Simulator
 
-Aplicación educativa y experimental en Python y Streamlit para construir modelos numéricos, representar incertidumbre y explorar decisiones. El nombre y el alcance del proyecto siguen abiertos.
+Simulador educativo y auditable de incertidumbre en Python y Streamlit. Permite construir modelos con distribuciones, correlaciones, Monte Carlo, Latin Hypercube, sensibilidad global y ajuste a observaciones propias.
 
 La organización sigue el patrón de Analizador Financiero: `app.py` declara la navegación, `pages/` contiene una página por módulo, `src/risk_lab/` concentra el cálculo sin importar Streamlit y `src/risk_ui/` centraliza identidad visual y formato. La marca usa la paleta y el logo de Elephant Data Labs.
 
@@ -20,16 +20,19 @@ src/risk_ui/                    marca, estilos y formatos compartidos
 data/                           reservado para ejemplos públicos y modelos
 ```
 
-## Funciones del prototipo
+## Funciones de V1
 
-- Simulación Monte Carlo reproducible con semilla configurable.
+- Simulación Monte Carlo reproducible con hasta 100.000 iteraciones y semilla configurable.
+- Muestreo Latin Hypercube y comparación con Monte Carlo.
 - Distribuciones Normal, Uniforme, Triangular, PERT y Lognormal.
 - Fórmulas aritméticas seguras con variables y funciones matemáticas básicas.
-- Dependencia entre supuestos mediante matriz y cópula gaussiana.
+- Dependencia entre supuestos mediante matriz declarada y cópula gaussiana.
 - Distribución de resultados, percentiles, probabilidad frente a un umbral y resumen de cola inferior.
-- Sensibilidad por correlación de rangos y escenarios de salida representativos.
+- Sensibilidad por correlación de rangos; índices de Sobol con SALib para entradas independientes.
+- Error estándar de la media e intervalos bootstrap del 95% para P5, P50 y P95.
+- Regla DCF opcional por iteración para exigir crecimiento terminal g < WACC; informa sorteos descartados.
 - Exportación de la especificación a JSON y de iteraciones a CSV.
-- Comparación de ajustes de distribuciones candidatas a datos CSV.
+- Comparación de distribuciones candidatas ajustadas a observaciones de archivos CSV.
 - Pronóstico exploratorio por remuestreo de cambios históricos.
 - Optimización en grilla de una variable de decisión con restricción opcional.
 
@@ -44,18 +47,19 @@ py -m streamlit run app.py
 
 ## Publicación
 
-El punto de entrada es `app.py`; las dependencias están en `requirements.txt` y no se requieren claves secretas. La aplicación está organizada para desplegarse desde un repositorio en Streamlit Community Cloud.
+El punto de entrada es `app.py`; las dependencias están en `requirements.txt` y no se requieren claves secretas. La aplicación está organizada para desplegarse desde este repositorio en Streamlit Community Cloud.
 
-## Límites actuales
+## Límites y metodología
 
-- No carga ni ejecuta libros Excel; el modelo se define con variables y una fórmula en la interfaz.
+- La matriz de correlación guía una cópula gaussiana; con marginales no normales, la correlación resultante puede diferir de la declarada.
+- La correlación de rangos mide asociación en la corrida conjunta, no un efecto causal individual.
+- Sobol requiere entradas independientes y una salida válida en todo el espacio; se desactiva si hay correlaciones o filtro DCF.
+- Los intervalos bootstrap describen error de muestreo y no incertidumbre sobre la especificación o las distribuciones.
+- El caso DCF educativo usa una empresa ficticia y supuestos de ejemplo. Calcula valor empresa sin precio implícito por acción ni comparación con cotizaciones; se descartan e informan las iteraciones con g ≥ WACC.
 - El pronóstico remuestrea cambios históricos y no modela automáticamente tendencia, estacionalidad ni quiebres estructurales.
-- El ajuste estadístico compara candidatos sencillos; el AIC no demuestra que una distribución sea verdadera.
-- La matriz guía dependencia mediante cópula gaussiana; con marginales no normales, la correlación final no necesariamente coincide con el valor ingresado.
+- El AIC compara candidatos sencillos, pero no demuestra que una distribución sea verdadera.
 - La optimización compara una grilla finita y no garantiza un óptimo global.
 - No incluye persistencia de proyectos ni colaboración entre usuarios.
-- Los resultados dependen del modelo y de sus supuestos; no son recomendaciones ni predicciones garantizadas.
+- Los resultados dependen del modelo y los supuestos; son una herramienta educativa, no predicciones garantizadas ni recomendaciones.
 
-## Evolución posible
-
-La prioridad de producto sería facilitar modelos que ya existen en hojas de cálculo. La compatibilidad con Excel debe definirse por etapas y con una lista explícita de fórmulas y funciones soportadas. La valoración financiera del Analizador Financiero puede integrarse como un ejemplo adicional, no como el único uso de la aplicación.
+La aplicación no carga ni ejecuta libros Excel. La valoración de empresas es uno de varios usos posibles, no el propósito exclusivo del simulador.
