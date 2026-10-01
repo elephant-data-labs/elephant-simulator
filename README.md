@@ -20,19 +20,20 @@ src/risk_ui/                    marca, estilos y formatos compartidos
 data/                           reservado para ejemplos públicos y modelos
 ```
 
-## Funciones de V1
+## Funciones del prototipo
 
 - Simulación Monte Carlo reproducible con hasta 100.000 iteraciones y semilla configurable.
 - Muestreo Latin Hypercube y comparación con Monte Carlo.
 - Distribuciones Normal, Uniforme, Triangular, PERT y Lognormal.
-- Fórmulas aritméticas seguras con variables y funciones matemáticas básicas.
-- Dependencia entre supuestos mediante matriz declarada y cópula gaussiana.
+- Modelo inicial vacío con `variable_1`, cuyo nombre define el usuario; constructor visual de fórmulas con botones para insertar variables y menús de funciones y operadores. Permite expresiones como `log(ventas)` y actualiza referencias al renombrar variables.
+- Resultados anteriores se invalidan al modificar supuestos, fórmula o método de simulación.
+- Dependencia entre supuestos mediante matriz y cópula gaussiana.
 - Distribución de resultados, percentiles, probabilidad frente a un umbral y resumen de cola inferior.
-- Sensibilidad por correlación de rangos; índices de Sobol con SALib para entradas independientes.
-- Error estándar de la media e intervalos bootstrap del 95% para P5, P50 y P95.
-- Regla DCF opcional por iteración para exigir crecimiento terminal g < WACC; informa sorteos descartados.
+- Sensibilidad por correlación de rangos y, con variables independientes, índices de Sobol mediante SALib.
+- Error estándar de la media e intervalos bootstrap para P5, P50 y P95.
+- Regla DCF opcional por iteración para exigir crecimiento terminal g < WACC; informa iteraciones descartadas.
 - Exportación de la especificación a JSON y de iteraciones a CSV.
-- Comparación de distribuciones candidatas ajustadas a observaciones de archivos CSV.
+- Comparación de ajustes de distribuciones candidatas a datos CSV.
 - Pronóstico exploratorio por remuestreo de cambios históricos.
 - Optimización en grilla de una variable de decisión con restricción opcional.
 
@@ -47,19 +48,20 @@ py -m streamlit run app.py
 
 ## Publicación
 
-El punto de entrada es `app.py`; las dependencias están en `requirements.txt` y no se requieren claves secretas. La aplicación está organizada para desplegarse desde este repositorio en Streamlit Community Cloud.
+El punto de entrada es `app.py`; las dependencias están en `requirements.txt` y no se requieren claves secretas. La aplicación está organizada para desplegarse desde un repositorio en Streamlit Community Cloud.
 
-## Límites y metodología
+## Límites actuales
 
-- La matriz de correlación guía una cópula gaussiana; con marginales no normales, la correlación resultante puede diferir de la declarada.
-- La correlación de rangos mide asociación en la corrida conjunta, no un efecto causal individual.
-- Sobol requiere entradas independientes y una salida válida en todo el espacio; se desactiva si hay correlaciones o filtro DCF.
-- Los intervalos bootstrap describen error de muestreo y no incertidumbre sobre la especificación o las distribuciones.
-- El caso DCF educativo usa una empresa ficticia y supuestos de ejemplo. Calcula valor empresa sin precio implícito por acción ni comparación con cotizaciones; se descartan e informan las iteraciones con g ≥ WACC.
+- No carga ni ejecuta libros Excel; el modelo se define con variables y una fórmula en la interfaz.
 - El pronóstico remuestrea cambios históricos y no modela automáticamente tendencia, estacionalidad ni quiebres estructurales.
-- El AIC compara candidatos sencillos, pero no demuestra que una distribución sea verdadera.
+- El ajuste estadístico compara candidatos sencillos; el AIC no demuestra que una distribución sea verdadera.
+- La matriz guía dependencia mediante cópula gaussiana; con marginales no normales, la correlación final no necesariamente coincide con el valor ingresado.
+- Sobol requiere entradas independientes; no se calcula cuando el modelo contiene correlaciones ni cuando se aplica el filtro DCF.
+- Los intervalos bootstrap describen error de muestreo y no la incertidumbre sobre la estructura o especificación del modelo.
 - La optimización compara una grilla finita y no garantiza un óptimo global.
 - No incluye persistencia de proyectos ni colaboración entre usuarios.
-- Los resultados dependen del modelo y los supuestos; son una herramienta educativa, no predicciones garantizadas ni recomendaciones.
+- Los resultados dependen del modelo y de sus supuestos; no son recomendaciones ni predicciones garantizadas.
 
-La aplicación no carga ni ejecuta libros Excel. La valoración de empresas es uno de varios usos posibles, no el propósito exclusivo del simulador.
+## Evolución posible
+
+El ejemplo DCF usa una empresa ficticia y supuestos definidos en la aplicación; presenta valor empresa educativo sin precio implícito por acción ni comparación con cotizaciones. Para modelos propios, las distribuciones se ajustan únicamente a los datos que carga el usuario. La compatibilidad con Excel debe definirse por etapas y con una lista explícita de fórmulas y funciones soportadas.

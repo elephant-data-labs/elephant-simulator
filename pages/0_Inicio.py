@@ -5,13 +5,13 @@ import streamlit as st
 from risk_ui.brand import footer, module_card, setup_page
 
 setup_page(
-    "Laboratorio de incertidumbre",
+    "Elephant Simulator",
     "Simulación, pronósticos y análisis de decisiones desde una aplicación web.",
 )
 
 st.info(
     "**Prototipo educativo.** Define supuestos, conecta variables con una fórmula y observa "
-    "cómo la incertidumbre se propaga al resultado. El nombre y el alcance del proyecto siguen abiertos."
+    "cómo la incertidumbre se propaga al resultado. Usa una semilla para repetir y auditar cada corrida."
 )
 
 st.markdown("#### ¿Qué quieres hacer?")
@@ -49,11 +49,12 @@ with columns[2]:
 st.markdown("#### Aplicaciones posibles")
 st.write(
     "La misma estructura puede apoyar modelos de presupuesto, ventas, inventario, costos de "
-    "proyectos, plazos, ingeniería o finanzas. La valoración de empresas es un ejemplo, no "
-    "el límite del proyecto."
+    "proyectos, plazos, ingeniería o finanzas. El caso DCF ficticio es uno de varios ejemplos; "
+    "el simulador no depende de datos externos."
 )
 st.warning(
     "Esta primera versión define modelos mediante variables y fórmulas en la aplicación. "
     "Todavía no importa ni ejecuta libros Excel."
 )
+st.caption("Incluye un caso DCF educativo de empresa ficticia. Los resultados no comparan el valor calculado con precios de mercado ni constituyen recomendaciones de inversión.")
 footer()

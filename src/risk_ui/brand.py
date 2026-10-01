@@ -7,7 +7,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGO_PATH = ROOT / "Elephant.png"
-APP_VERSION = "v0.1 · prototipo"
+APP_VERSION = "Elephant Simulator · V1 educativa"
 
 TEAL = "#157a8a"
 INK = "#0b3d62"
@@ -61,7 +61,7 @@ section.main .block-container {{ padding-top: 2.2rem; max-width: 1320px; }}
 
 def page_config() -> None:
     st.set_page_config(
-        page_title="Laboratorio de incertidumbre · Elephant Data Labs",
+        page_title="Elephant Simulator · Elephant Data Labs",
         page_icon=str(LOGO_PATH) if LOGO_PATH.exists() else "📊",
         layout="wide",
         initial_sidebar_state="expanded",

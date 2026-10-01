@@ -7,6 +7,8 @@ from typing import Mapping
 
 import numpy as np
 import pandas as pd
+from SALib.analyze import sobol as sobol_analyze
+from SALib.sample import sobol as sobol_sample
 from scipy.stats import norm, rankdata
 
 
@@ -167,6 +169,7 @@ def run_simulation(
     iterations: int = 20_000,
     seed: int = 42,
     correlation: pd.DataFrame | None = None,
+    sampling_method: str = "Monte Carlo",
 ) -> tuple[dict[str, np.ndarray], np.ndarray]:
     if not assumptions:
         raise ModelError("Agregue al menos un supuesto incierto.")
@@ -181,6 +184,8 @@ def run_simulation(
     if unknown:
         raise ModelError("Variables no definidas en la fórmula: " + ", ".join(sorted(unknown)))
 
+    if sampling_method not in {"Monte Carlo", "Latin Hypercube"}:
+        raise ModelError("Método de muestreo no reconocido.")
     rng = np.random.default_rng(seed)
     if correlation is None:
         matrix = np.eye(len(names))
@@ -196,11 +201,99 @@ def run_simulation(
     if eigenvalues.min() < -1e-8:
         raise ModelError("La matriz no es semidefinida positiva; ajuste las correlaciones para que sean compatibles.")
     factor = eigenvectors @ np.diag(np.sqrt(np.clip(eigenvalues, 0, None)))
-    latent = rng.standard_normal((iterations, len(names))) @ factor.T
+    if sampling_method == "Latin Hypercube":
+        from scipy.stats import qmc
+
+        base = qmc.LatinHypercube(d=len(names), seed=seed).random(iterations)
+        latent = norm.ppf(np.clip(base, 1e-10, 1 - 1e-10)) @ factor.T
+    else:
+        latent = rng.standard_normal((iterations, len(names))) @ factor.T
     uniforms = norm.cdf(latent)
     draws = {item.name: _inverse_distribution(item, uniforms[:, i]) for i, item in enumerate(assumptions)}
     outcome = evaluate_formula(formula, draws)
     return draws, outcome
+
+
+def filter_draws(
+    draws: Mapping[str, np.ndarray], outcome: np.ndarray, valid: np.ndarray
+) -> tuple[dict[str, np.ndarray], np.ndarray, int]:
+    """Apply an iteration-level model constraint and report discarded draws."""
+    mask = np.asarray(valid, dtype=bool)
+    if mask.shape != outcome.shape:
+        raise ModelError("La regla de validez debe producir una condición por iteración.")
+    kept = int(mask.sum())
+    if kept == 0:
+        raise ModelError("Ninguna iteración cumple la regla del modelo; revise los supuestos.")
+    return {name: np.asarray(values)[mask] for name, values in draws.items()}, outcome[mask], int(len(mask) - kept)
+
+
+def convergence_summary(
+    outcome: np.ndarray,
+    seed: int = 42,
+    replicates: int = 500,
+    confidence: float = 0.95,
+) -> tuple[float, pd.DataFrame]:
+    """Return the standard error of the mean and bootstrap CIs for P5/P50/P95."""
+    sample = np.asarray(outcome, dtype=float)
+    if sample.size < 2:
+        raise ModelError("Se necesitan al menos dos iteraciones válidas para medir convergencia.")
+    quantiles = np.array([0.05, 0.50, 0.95])
+    estimates = np.quantile(sample, quantiles)
+    boot = np.empty((replicates, len(quantiles)), dtype=float)
+    rng = np.random.default_rng(seed)
+    batch_size = max(1, min(32, 2_000_000 // sample.size))
+    for start in range(0, replicates, batch_size):
+        count = min(batch_size, replicates - start)
+        indices = rng.integers(0, sample.size, size=(count, sample.size))
+        boot[start : start + count] = np.quantile(sample[indices], quantiles, axis=1).T
+    alpha = (1 - confidence) / 2
+    lows, highs = np.quantile(boot, [alpha, 1 - alpha], axis=0)
+    labels = ["P5", "P50", "P95"]
+    intervals = pd.DataFrame({
+        "Percentil": labels,
+        "Estimación": estimates,
+        f"Límite {confidence:.0%} inferior": lows,
+        f"Límite {confidence:.0%} superior": highs,
+    })
+    standard_error = float(np.std(sample, ddof=1) / np.sqrt(sample.size))
+    return standard_error, intervals
+
+
+def sobol_sensitivity(
+    assumptions: list[Assumption], formula: str, seed: int = 42, base_sample: int = 512
+) -> pd.DataFrame:
+    """Estimate first/total-order Sobol indices for independent input distributions."""
+    if not assumptions:
+        raise ModelError("Agregue al menos un supuesto para calcular Sobol.")
+    for item in assumptions:
+        _validate_assumption(item)
+    names = [item.name for item in assumptions]
+    if len(set(names)) != len(names):
+        raise ModelError("Cada variable debe tener un nombre único.")
+    unknown = formula_names(formula) - set(names)
+    if unknown:
+        raise ModelError("Variables no definidas en la fórmula: " + ", ".join(sorted(unknown)))
+    problem = {"num_vars": len(names), "names": names, "bounds": [[0.0, 1.0]] * len(names)}
+    unit_samples = sobol_sample.sample(
+        problem, N=base_sample, calc_second_order=False, seed=seed
+    )
+    draws = {
+        item.name: _inverse_distribution(item, unit_samples[:, i])
+        for i, item in enumerate(assumptions)
+    }
+    output = evaluate_formula(formula, draws)
+    if np.var(output) <= np.finfo(float).eps:
+        raise ModelError("El resultado no varía; no se pueden estimar índices de Sobol.")
+    indices = sobol_analyze.analyze(
+        problem, output, calc_second_order=False, num_resamples=100, seed=seed
+    )
+    return pd.DataFrame({
+        "Variable": names,
+        "Sobol primer orden": indices["S1"],
+        "Sobol total": indices["ST"],
+        "IC primer orden": indices["S1_conf"],
+        "IC total": indices["ST_conf"],
+    }).sort_values("Sobol total", ascending=False)
 
 
 def sensitivity_table(draws: Mapping[str, np.ndarray], outcome: np.ndarray) -> pd.DataFrame:

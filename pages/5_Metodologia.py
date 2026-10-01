@@ -26,8 +26,30 @@ st.write(
 st.markdown("#### Sensibilidad y escenarios")
 st.write(
     "La sensibilidad usa correlaciones de rangos entre cada supuesto y el resultado; "
-    "muestra asociación, no causalidad. Los escenarios P10, P50 y P90 presentan sorteos "
-    "representativos de la distribución de salida y conservan la dependencia modelada."
+    "muestra asociación conjunta, no causalidad. No es una medida de efecto individual: "
+    "al haber entradas correlacionadas, la asociación puede recoger efectos compartidos. "
+    "Los índices de Sobol estiman efectos de primer orden y totales, incluidas interacciones, "
+    "pero solo se habilitan con entradas independientes y sin filtro de factibilidad. "
+    "Los escenarios P10, P50 y P90 presentan sorteos representativos de la distribución de salida."
+)
+
+st.markdown("#### Muestreo y convergencia")
+st.write(
+    "Monte Carlo genera sorteos pseudoaleatorios; Latin Hypercube estratifica cada entrada "
+    "para cubrir mejor sus marginales con un número finito de corridas. La comparación entre "
+    "métodos es diagnóstica: resultados cercanos no validan los supuestos. El error estándar "
+    "resume la precisión de la media, mientras que los intervalos bootstrap para P5, P50 y P95 "
+    "cuantifican variación de esos estimadores por muestreo. Ninguna de estas medidas incorpora "
+    "incertidumbre sobre la selección de distribuciones o la estructura del modelo."
+)
+
+st.markdown("#### Regla de crecimiento terminal en DCF")
+st.write(
+    "El caso educativo usa una empresa ficticia y calcula valor empresa desde flujos de caja, "
+    "sin estimar un precio implícito por acción ni compararlo con una cotización. Para evitar "
+    "un valor terminal no válido, se exige g < WACC por iteración; las combinaciones que no "
+    "cumplen se descartan y se informan. Por ello, el resultado es una distribución condicionada "
+    "a la regla y al resto de supuestos."
 )
 
 st.markdown("#### Pronósticos y ajuste de distribuciones")
