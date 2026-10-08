@@ -19,6 +19,7 @@ modelacion = [
     st.Page("pages/1_Simulacion.py", title="Modelo y simulación", icon=":material/monitoring:"),
     st.Page("pages/2_Ajuste_de_distribuciones.py", title="Ajuste de distribuciones", icon=":material/query_stats:"),
     st.Page("pages/3_Pronostico.py", title="Pronóstico", icon=":material/timeline:"),
+    st.Page("pages/6_Regresion_AR1.py", title="Regresión espuria AR(1)", icon=":material/show_chart:"),
 ]
 
 decisiones = [

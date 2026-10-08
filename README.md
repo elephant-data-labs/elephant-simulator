@@ -15,6 +15,7 @@ pages/                          una página por módulo
   3_Pronostico.py               remuestreo exploratorio de series
   4_Optimizacion.py             comparación de decisiones
   5_Metodologia.py              metodología y límites
+  6_Regresion_AR1.py            regresión espuria y pruebas con HAC
 src/risk_lab/                   motor de cálculo, independiente de Streamlit
 src/risk_ui/                    marca, estilos y formatos compartidos
 data/                           reservado para ejemplos públicos y modelos
@@ -35,6 +36,7 @@ data/                           reservado para ejemplos públicos y modelos
 - Exportación de la especificación a JSON y de iteraciones a CSV.
 - Comparación de ajustes de distribuciones candidatas a datos CSV.
 - Pronóstico exploratorio por remuestreo de cambios históricos.
+- Experimento econométrico con dos AR(1) independientes, regresión con constante y comparación de tasas de rechazo OLS usual frente a HAC/Newey–West.
 - Optimización en grilla de una variable de decisión con restricción opcional.
 
 ## Ejecutar localmente
@@ -57,6 +59,7 @@ El punto de entrada es `app.py`; las dependencias están en `requirements.txt` y
 - El ajuste estadístico compara candidatos sencillos; el AIC no demuestra que una distribución sea verdadera.
 - La matriz guía dependencia mediante cópula gaussiana; con marginales no normales, la correlación final no necesariamente coincide con el valor ingresado.
 - Sobol requiere entradas independientes; no se calcula cuando el modelo contiene correlaciones ni cuando se aplica el filtro DCF.
+- El experimento AR(1) usa series estacionarias persistentes (φ < 1); la prueba HAC depende del ancho de banda y no reemplaza el diagnóstico del modelo.
 - Los intervalos bootstrap describen error de muestreo y no la incertidumbre sobre la estructura o especificación del modelo.
 - La optimización compara una grilla finita y no garantiza un óptimo global.
 - No incluye persistencia de proyectos ni colaboración entre usuarios.
