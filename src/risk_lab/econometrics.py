@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,7 @@ class AR1Experiment:
     sigma_x: float = 1.0
     burn_in: int = 500
     hac_lags: int = 6
+    significance_level: float = 0.10
     seed: int = 42
 
 
@@ -50,6 +51,8 @@ def simulate_independent_ar1_regressions(
         raise ValueError("Las desviaciones de las innovaciones deben ser positivas.")
     if settings.burn_in < 0 or not 0 <= settings.hac_lags < settings.observations:
         raise ValueError("Revise el calentamiento y los rezagos HAC.")
+    if not 0 < settings.significance_level < 1:
+        raise ValueError("El nivel de significancia debe estar entre 0 y 1.")
 
     rng = np.random.default_rng(settings.seed)
     y = _simulate_ar1(
@@ -143,8 +146,8 @@ def simulate_independent_ar1_regressions(
         "Durbin-Watson": durbin_watson,
         "Media Y": y_mean,
         "Desv. estándar Y": y.std(axis=1, ddof=1),
-        "Rechaza OLS": p_classical_beta < 0.05,
-        "Rechaza HAC": hac_p_beta < 0.05,
+        "Rechaza OLS": p_classical_beta < settings.significance_level,
+        "Rechaza HAC": hac_p_beta < settings.significance_level,
     })
     first_run = pd.DataFrame({
         "Periodo": np.arange(1, settings.observations + 1),
@@ -153,3 +156,21 @@ def simulate_independent_ar1_regressions(
         "Residuo OLS": residuals[0],
     })
     return results, first_run
+
+
+def simulate_persistence_sweep(
+    settings: AR1Experiment,
+    persistence_values: tuple[float, ...] = (0.0, 0.5, 0.8, 0.9, 0.95, 0.99),
+) -> pd.DataFrame:
+    """Compare empirical null rejection rates as both AR(1) roots increase."""
+    rows = []
+    for phi in persistence_values:
+        case = replace(settings, phi_y=phi, phi_x=phi)
+        results, _ = simulate_independent_ar1_regressions(case)
+        rows.append({
+            "Persistencia φ": phi,
+            "Rechazo OLS usual": float(results["Rechaza OLS"].mean()),
+            "Rechazo HAC": float(results["Rechaza HAC"].mean()),
+            "Nivel nominal": settings.significance_level,
+        })
+    return pd.DataFrame(rows)
